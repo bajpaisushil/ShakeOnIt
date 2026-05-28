@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Captures interest in the Pro (Aadhaar eSign) tier + the draft contract.
+// When eSign goes live, we have everyone's draft + contact ready.
+model Waitlist {
+  id              String   @id @default(cuid())
+  templateType    String   // "loan" | "expense" | "service"
+  contractData    String   // JSON blob of template-specific fields
+  creatorName     String
+  creatorEmail    String
+  creatorPhone    String
+  recipientName   String?
+  recipientPhone  String?
+  draftText       String   // human-readable contract render
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([creatorEmail])
+}
+
+// Anonymized public-wall entries. Users opt-in to share their promise to the wall.
+// We strip identifying info — only template type + amount bucket + due-by goes up.
+model PublicPromise {
+  id           String   @id @default(cuid())
+  kind         String   // "pinky" | "pro-draft"
+  templateType String?  // for pro drafts
+  blurb        String   // anonymized, e.g. "Someone promised ₹2k by Friday"
+  amount       Int?     // for stats — paise, optional
+  createdAt    DateTime @default(now())
+  agreedAt     DateTime?
+
+  @@index([createdAt])
+}
