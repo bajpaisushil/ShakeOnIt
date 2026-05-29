@@ -34,6 +34,7 @@ function ProNewInner() {
   const [submitting, setSubmitting] = useState(false);
   const [waitlistPos, setWaitlistPos] = useState<number | null>(null);
   const [waitlistId, setWaitlistId] = useState<string | null>(null);
+  const [upiVpa, setUpiVpa] = useState('');
 
   const handleDraft = (c: Contract) => {
     const text = renderContract(c);
@@ -73,6 +74,7 @@ function ProNewInner() {
           recipientName: recipientName.trim() || null,
           recipientPhone: recipientPhone.trim() || null,
           draftText: draft,
+          upiVpa: upiVpa.trim() || null,
         }),
       });
       if (!res.ok) throw new Error('failed');
@@ -205,6 +207,21 @@ function ProNewInner() {
             />
             <p className="text-xs text-muted mt-1">
               You can add them later when eSign goes live.
+            </p>
+          </div>
+
+          <div className="border-t border-line my-5 pt-5">
+            <label className="label">Your UPI ID for repayment — optional</label>
+            <input
+              className="input"
+              placeholder="yourname@oksbi"
+              value={upiVpa}
+              onChange={(e) => setUpiVpa(e.target.value)}
+            />
+            <p className="text-xs text-muted mt-1 leading-relaxed">
+              If set, the reminder email on the due date includes a one-tap "Pay via UPI"
+              button — opens GPay / PhonePe / Paytm with the amount pre-filled. Free, no signup
+              needed from them.
             </p>
           </div>
 

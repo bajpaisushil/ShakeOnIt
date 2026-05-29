@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { isSuspended } from '@/lib/suspend';
+import { isValidVPA } from '@/lib/upi';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +17,7 @@ export async function POST(req: NextRequest) {
       recipientName,
       recipientPhone,
       draftText,
+      upiVpa,
     } = body;
 
     if (!templateType || !contractData || !creatorEmail || !creatorPhone || !draftText) {
@@ -21,6 +25,15 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await getCurrentUser().catch(() => null);
+    if (user && isSuspended(user)) {
+      return NextResponse.json(
+        { error: 'account suspended', suspended: true },
+        { status: 403 },
+      );
+    }
+
+    const cleanVpa = typeof upiVpa === 'string' && isValidVPA(upiVpa.trim()) ? upiVpa.trim() : null;
+    const confirmToken = randomBytes(16).toString('hex');
 
     const entry = await prisma.waitlist.create({
       data: {
@@ -33,6 +46,8 @@ export async function POST(req: NextRequest) {
         recipientName: recipientName ? String(recipientName).slice(0, 100) : null,
         recipientPhone: recipientPhone ? String(recipientPhone).slice(0, 20) : null,
         draftText: String(draftText).slice(0, 10000),
+        upiVpa: cleanVpa,
+        confirmToken,
       },
     });
 

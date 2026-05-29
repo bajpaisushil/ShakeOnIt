@@ -1,7 +1,15 @@
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { TEMPLATE_META } from '@/lib/contracts';
+import { getCurrentUser } from '@/lib/auth';
+import { isSuspended } from '@/lib/suspend';
 
-export default function ProPicker() {
+export const dynamic = 'force-dynamic';
+
+export default async function ProPicker() {
+  const user = await getCurrentUser().catch(() => null);
+  if (user && isSuspended(user)) redirect('/suspended');
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
       <div className="text-center text-muted text-sm mb-6">Court-acceptable contracts. Pick a template to start.</div>

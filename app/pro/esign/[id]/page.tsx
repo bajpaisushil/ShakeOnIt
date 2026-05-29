@@ -2,8 +2,9 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { isSuspended } from '@/lib/suspend';
 import { TEMPLATE_META } from '@/lib/contracts';
-import { PRO_PRICE_PAISE, RAZORPAY_MODE } from '@/lib/razorpay';
+import { PRO_PRICE_PAISE, PAYMENT_MODE, buildPlatformUpiLink, PLATFORM_UPI_VPA } from '@/lib/payments';
 import EsignClient from './esign-client';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export default async function EsignPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user) redirect(`/login?to=/pro/esign/${id}`);
+  if (isSuspended(user)) redirect('/suspended');
 
   const waitlist = await prisma.waitlist.findUnique({ where: { id } });
   if (!waitlist) notFound();
@@ -83,8 +85,13 @@ export default async function EsignPage({ params }: { params: Promise<{ id: stri
         creatorName={waitlist.creatorName}
         creatorPhone={user.phone}
         pricePaise={PRO_PRICE_PAISE}
-        razorpayMode={RAZORPAY_MODE}
-        razorpayKeyId={process.env.RAZORPAY_KEY_ID || ''}
+        paymentMode={PAYMENT_MODE}
+        platformUpiLink={buildPlatformUpiLink({
+          amountPaise: PRO_PRICE_PAISE,
+          note: `ShakeOnIt eSign ${waitlist.id.slice(-6)}`,
+          reference: `esign_${waitlist.id.slice(-20)}`,
+        })}
+        platformUpiVpa={PLATFORM_UPI_VPA}
         alreadyPaid={Boolean(waitlist.paidAt)}
       />
     </div>

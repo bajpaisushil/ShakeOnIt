@@ -17,8 +17,19 @@ model User {
   lang      String     @default("en")
   createdAt DateTime   @default(now())
 
+  // Suspension state — reserved for manual admin action (e.g. abuse).
+  // Not auto-triggered in the current flow; the promise-keeping score handles accountability.
+  suspendedAt        DateTime?
+  suspensionReason   String?
+  outstandingPaise   Int       @default(0)
+
+  // Promise-keeping score. Starts at 100 (perfect). Drops when contracts go
+  // overdue. Shown on dashboard + (anonymized) on the public wall for severe drops.
+  promiseScore       Int       @default(100)
+
   waitlist  Waitlist[]
   sessions  Session[]
+  mandates  Mandate[]
 }
 
 model Session {
@@ -74,13 +85,61 @@ model Waitlist {
   razorpayPaymentId  String?
   paidAt             DateTime?
 
+  // Auto-debit configuration — kept for future provider integration; not user-facing in v1.
+  autoDebitEnabled   Boolean   @default(false)
+  autoDebitAmountPaise Int?
+
+  // Lender's UPI VPA — appears as a "Pay via UPI" tap-to-pay link in reminders and on /my.
+  upiVpa             String?
+
+  // Settlement state (the lightweight alternative to auto-debit)
+  reminderSentAt     DateTime?
+  markedPaidAt       DateTime?    // borrower clicked "I've paid" — informational
+  markedReceivedAt   DateTime?    // lender confirmed "received" — source of truth
+  overdueWallPostedAt DateTime?   // posted as broken-promise on public wall
+
+  // Random token for unauthenticated mark-as-paid / mark-as-received links in emails.
+  confirmToken       String?   @unique
+
   createdAt DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  mandate Mandate?
 
   @@index([createdAt])
   @@index([creatorEmail])
   @@index([userId])
+}
+
+// Auto-debit mandate. In production, this is a Razorpay Subscription / UPI Token.
+// In demo, this is a simulated row that the user can manually trigger to test
+// the success/failure→suspension flow.
+model Mandate {
+  id                     String   @id @default(cuid())
+  userId                 String
+  waitlistId             String?  @unique
+
+  status                 String   // "pending" | "active" | "succeeded" | "failed" | "cancelled"
+  amountPaise            Int
+  scheduledFor           DateTime // when the debit fires
+  attemptsCount          Int      @default(0)
+  lastAttemptAt          DateTime?
+  succeededAt            DateTime?
+  failedAt               DateTime?
+  failureReason          String?
+
+  // Razorpay identifiers — null in simulated mode
+  razorpayTokenId        String?
+  razorpaySubscriptionId String?
+  razorpayPaymentId      String?
+
+  createdAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  waitlist Waitlist? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([scheduledFor, status])
 }
 
 // Anonymized public-wall entries.
