@@ -1,11 +1,10 @@
 import Link from 'next/link';
-import Header from '@/components/Header';
 import { TEMPLATE_META } from '@/lib/contracts';
 
 export default function ProPicker() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <Header subtitle="Court-acceptable contracts. Pick a template to start." />
+      <div className="text-center text-muted text-sm mb-6">Court-acceptable contracts. Pick a template to start.</div>
 
       <div className="card mb-6 !p-5 border-accent/40">
         <div className="flex items-start gap-3">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,8 +20,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing required fields' }, { status: 400 });
     }
 
+    const user = await getCurrentUser().catch(() => null);
+
     const entry = await prisma.waitlist.create({
       data: {
+        userId: user?.id ?? null,
         templateType: String(templateType),
         contractData: JSON.stringify(contractData),
         creatorName: String(creatorName ?? '').slice(0, 100),

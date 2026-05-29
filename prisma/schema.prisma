@@ -3,14 +3,56 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")       // Neon's pooled URL (...-pooler...) — used at runtime
+  directUrl = env("DIRECT_URL")         // Neon's direct URL — used by `prisma db push` / migrate
 }
 
-// Captures interest in the Pro (Aadhaar eSign) tier + the draft contract.
-// When eSign goes live, we have everyone's draft + contact ready.
+// ─── Users ───────────────────────────────────────────────────────────────
+model User {
+  id        String     @id @default(cuid())
+  phone     String     @unique
+  name      String?
+  email     String?
+  lang      String     @default("en")
+  createdAt DateTime   @default(now())
+
+  waitlist  Waitlist[]
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// One-time codes for phone OTP login. Codes auto-expire.
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String   // 6-digit code
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+  @@index([expiresAt])
+}
+
+// ─── Contracts ───────────────────────────────────────────────────────────
+// Captures interest in the Pro tier + the draft contract + signing + payment state.
 model Waitlist {
   id              String   @id @default(cuid())
+  userId          String?
+
   templateType    String   // "loan" | "expense" | "service"
   contractData    String   // JSON blob of template-specific fields
   creatorName     String
@@ -19,21 +61,36 @@ model Waitlist {
   recipientName   String?
   recipientPhone  String?
   draftText       String   // human-readable contract render
-  createdAt       DateTime @default(now())
+
+  // Demo Aadhaar eSign state
+  signedAt           DateTime?
+  signatureHash      String?
+  signerNameOnAadhaar String?
+  isDemoSigned       Boolean   @default(false)
+
+  // Razorpay state
+  paidPaise          Int?
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  paidAt             DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([creatorEmail])
+  @@index([userId])
 }
 
-// Anonymized public-wall entries. Users opt-in to share their promise to the wall.
-// We strip identifying info — only template type + amount bucket + due-by goes up.
+// Anonymized public-wall entries.
 model PublicPromise {
-  id           String   @id @default(cuid())
-  kind         String   // "pinky" | "pro-draft"
-  templateType String?  // for pro drafts
-  blurb        String   // anonymized, e.g. "Someone promised ₹2k by Friday"
-  amount       Int?     // for stats — paise, optional
-  createdAt    DateTime @default(now())
+  id           String    @id @default(cuid())
+  kind         String    // "pinky" | "pro-draft" | "pro-signed"
+  templateType String?
+  blurb        String
+  amount       Int?      // paise
+  createdAt    DateTime  @default(now())
   agreedAt     DateTime?
 
   @@index([createdAt])

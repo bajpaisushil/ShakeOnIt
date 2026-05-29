@@ -3,7 +3,6 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import {
   renderContract,
   TEMPLATE_META,
@@ -34,6 +33,7 @@ function ProNewInner() {
   const [recipientPhone, setRecipientPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [waitlistPos, setWaitlistPos] = useState<number | null>(null);
+  const [waitlistId, setWaitlistId] = useState<string | null>(null);
 
   const handleDraft = (c: Contract) => {
     const text = renderContract(c);
@@ -78,6 +78,7 @@ function ProNewInner() {
       if (!res.ok) throw new Error('failed');
       const data = await res.json();
       setWaitlistPos(data.position ?? null);
+      setWaitlistId(data.id ?? null);
       setStep('done');
     } catch {
       setError('Couldn\'t save your draft. Try again in a sec.');
@@ -90,7 +91,7 @@ function ProNewInner() {
   if (step === 'form') {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header subtitle={TEMPLATE_META[t].label} />
+        <div className="text-center text-muted text-sm mb-6">{TEMPLATE_META[t].label}</div>
         <section className="card">
           <div className="flex items-center gap-3 mb-5">
             <div className="text-3xl">{TEMPLATE_META[t].emoji}</div>
@@ -118,7 +119,7 @@ function ProNewInner() {
   if (step === 'review' && contract) {
     return (
       <div className="max-w-2xl mx-auto px-6 py-12">
-        <Header subtitle="Review the draft" />
+        <div className="text-center text-muted text-sm mb-6">Review the draft</div>
         <section className="card">
           <div className="pill mb-3">Step 2 of 3 · Review</div>
           <h1 className="text-xl font-bold mb-1">Does this look right?</h1>
@@ -147,7 +148,7 @@ function ProNewInner() {
   if (step === 'sign' && contract) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header subtitle="Join the eSign waitlist" />
+        <div className="text-center text-muted text-sm mb-6">Join the eSign waitlist</div>
         <section className="card">
           <div className="pill mb-3">Step 3 of 3 · Sign</div>
           <h1 className="text-xl font-bold mb-1">Save your draft + claim a spot</h1>
@@ -229,7 +230,7 @@ function ProNewInner() {
   if (step === 'done') {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header subtitle="You're on the list" />
+        <div className="text-center text-muted text-sm mb-6">You're on the list</div>
         <section className="card text-center">
           <div className="text-5xl mb-4">🎉</div>
           <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
@@ -245,13 +246,25 @@ function ProNewInner() {
           </div>
 
           <div className="space-y-2">
-            <Link href="/pinky" className="btn block text-center">
-              Make a free pinky promise meanwhile →
+            {waitlistId && (
+              <Link
+                href={`/pro/esign/${waitlistId}`}
+                className="btn block text-center !bg-good"
+                style={{ color: '#0f0e17' }}
+              >
+                ✍️ Try Demo eSign now →
+              </Link>
+            )}
+            <Link href="/pinky" className="btn btn-secondary block text-center">
+              Make a free pinky promise meanwhile
             </Link>
             <Link href="/" className="btn btn-secondary block text-center">
               Back to home
             </Link>
           </div>
+          <p className="text-xs text-muted text-center mt-3">
+            Demo eSign needs login (phone OTP). Drafts stay in your dashboard once you're signed in.
+          </p>
         </section>
       </div>
     );

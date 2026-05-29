@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import { encodePromise, decodePromise, formatDate, formatRupees, type PromiseV1 } from '@/lib/promise';
 import { downloadICS } from '@/lib/ics';
 import { buildUpiLink, isValidVPA } from '@/lib/upi';
@@ -121,7 +120,7 @@ function CreatePromise() {
   if (share) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header subtitle="Send this link to lock it in." />
+        <div className="text-center text-muted text-sm mb-6">Send this link to lock it in.</div>
         <section className="card">
           <div className="pill mb-3">✓ Link ready</div>
           <h1 className="text-xl font-bold mb-1">
@@ -175,7 +174,7 @@ function CreatePromise() {
   // ===== CREATE VIEW =====
   return (
     <div className="max-w-xl mx-auto px-6 py-12">
-      <Header subtitle="A pinky promise with a calendar reminder. No accounts, no database." />
+      <div className="text-center text-muted text-sm mb-6">A pinky promise with a calendar reminder. No accounts, no database.</div>
       <section className="card">
         <h1 className="text-xl font-bold mb-1">Lock in a promise</h1>
         <p className="text-sm text-muted mb-6">
@@ -289,7 +288,7 @@ function ViewPromise({ code }: { code: string }) {
   if (error) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header />
+
         <div className="card text-center">
           <h1 className="text-xl font-bold mb-2">That link looks broken 😬</h1>
           <p className="text-sm text-muted mb-5">
@@ -306,7 +305,7 @@ function ViewPromise({ code }: { code: string }) {
   if (!promise) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
-        <Header />
+
         <div className="card text-center text-muted">Loading…</div>
       </div>
     );
@@ -345,7 +344,7 @@ function ViewPromise({ code }: { code: string }) {
 
   return (
     <div className="max-w-xl mx-auto px-6 py-12">
-      <Header />
+
       <section className="card">
         <div className={`pill ${agreed ? 'pill-good' : ''} mb-3`}>
           {agreed ? '✓ Locked in' : '📜 Incoming promise'}

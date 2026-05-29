@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Header from '@/components/Header';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +38,7 @@ export default async function WallPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <Header subtitle="Public Promise Wall · anonymized" />
+      <div className="text-center text-muted text-sm mb-6">Public Promise Wall · anonymized</div>
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <div className="card !p-4 text-center">
